@@ -1,4 +1,5 @@
 import { ChatPreviewCard } from './ChatPreviewCard';
+import { ChatTransactionPreview } from './ChatTransactionPreview';
 import type { ChatMessage as ChatMessageType } from '../../types';
 import styles from './ChatMessage.module.css';
 
@@ -18,6 +19,14 @@ export function ChatMessage({ message, onConfirm, onReject }: ChatMessageProps) 
         {message.parsedItem && (
           <ChatPreviewCard
             item={message.parsedItem}
+            status={message.status}
+            onConfirm={() => onConfirm(message.id)}
+            onReject={() => onReject(message.id)}
+          />
+        )}
+        {message.parsedTransaction && (
+          <ChatTransactionPreview
+            transaction={message.parsedTransaction}
             status={message.status}
             onConfirm={() => onConfirm(message.id)}
             onReject={() => onReject(message.id)}

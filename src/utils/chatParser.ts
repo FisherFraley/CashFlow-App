@@ -1,4 +1,5 @@
-import type { BudgetItem, BudgetItemType, Frequency, ParsedBudgetItem } from '../types';
+import type { BudgetItem, BudgetItemType, Frequency, ParsedBudgetItem, ParsedTransaction, TransactionType } from '../types';
+import { parseRelativeDate } from './dateUtils';
 
 export interface ParseResult {
   item: ParsedBudgetItem | null;
@@ -292,4 +293,150 @@ export function parseMessage(input: string, existingItems: BudgetItem[]): ParseR
   }
 
   return { item, feedback };
+}
+
+// ─── Transaction Parsing ──────────────────────────────────────
+
+const TRANSACTION_SIGNALS = /\b(?:spent|paid|bought|received|earned|got paid|deposited|withdrew|charged|tipped)\b/i;
+
+const DATE_SIGNALS = /\b(?:today|yesterday|last\s+\w+|on\s+\w+|\d{1,2}\/\d{1,2}|\w+\s+\d{1,2}|\d+\s+days?\s+ago)\b/i;
+
+/**
+ * Determine if the user input looks like a transaction entry
+ * rather than a budget item. Transactions use past-tense verbs
+ * and date references.
+ */
+export function isTransactionInput(input: string): boolean {
+  // Must have a transaction signal verb
+  if (TRANSACTION_SIGNALS.test(input)) return true;
+
+  // If it has a date signal AND no recurring frequency, it's likely a transaction
+  if (DATE_SIGNALS.test(input)) {
+    // Only count it as transaction if there's no recurring frequency
+    const hasRecurring = /\b(?:monthly|weekly|biweekly|yearly|per\s+month|per\s+week|per\s+year|annual)/i.test(input);
+    return !hasRecurring;
+  }
+
+  return false;
+}
+
+export interface TransactionParseResult {
+  transaction: ParsedTransaction | null;
+  feedback: string;
+}
+
+/**
+ * Extract date from user input. Looks for date-like patterns and
+ * passes them through the relative date parser.
+ */
+function extractDate(input: string): string {
+  const lower = input.toLowerCase();
+
+  // "today" / "yesterday"
+  if (/\btoday\b/.test(lower)) return parseRelativeDate('today');
+  if (/\byesterday\b/.test(lower)) return parseRelativeDate('yesterday');
+
+  // "N days ago"
+  const daysAgoMatch = lower.match(/(\d+)\s+days?\s+ago/);
+  if (daysAgoMatch) return parseRelativeDate(daysAgoMatch[0]);
+
+  // "last monday" etc.
+  const lastDayMatch = lower.match(/last\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+  if (lastDayMatch) return parseRelativeDate(lastDayMatch[0]);
+
+  // "on monday" etc.
+  const onDayMatch = lower.match(/on\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+  if (onDayMatch) return parseRelativeDate(onDayMatch[1]);
+
+  // "jan 5" or "january 5" style
+  const monthDayMatch = lower.match(/(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:\s+(\d{4}))?/);
+  if (monthDayMatch) return parseRelativeDate(monthDayMatch[0]);
+
+  // "1/5" or "1/5/2025"
+  const slashMatch = lower.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (slashMatch) return parseRelativeDate(slashMatch[0]);
+
+  // Default to today
+  return parseRelativeDate('today');
+}
+
+/**
+ * Extract a transaction description from cleaned text.
+ */
+function extractDescription(cleaned: string, matchedKeyword: string | null, category: string): string {
+  let desc = cleaned
+    .replace(/\b(?:spent|paid|bought|received|earned|got|deposited|withdrew|charged|tipped)\b/gi, '')
+    .replace(/\b(?:on|at|for|from|to|in)\b/gi, '')
+    .replace(/\b(?:today|yesterday|last\s+\w+|\d+\s+days?\s+ago)\b/gi, '')
+    .replace(/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:\s+\d{4})?\b/gi, '')
+    .replace(/\d{1,2}\/\d{1,2}(?:\/\d{2,4})?/g, '')
+    .replace(/\b(?:dollars?|bucks?)\b/gi, '')
+    .replace(/[,$]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!desc || desc.length < 2) {
+    desc = matchedKeyword
+      ? matchedKeyword.charAt(0).toUpperCase() + matchedKeyword.slice(1)
+      : category;
+  } else {
+    desc = desc.replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  return desc;
+}
+
+/**
+ * Parse a chat message as a transaction (dated, one-time event).
+ * Returns null if it can't extract an amount.
+ */
+export function parseTransactionMessage(input: string): TransactionParseResult {
+  const amountResult = extractAmount(input);
+  if (!amountResult) {
+    return {
+      transaction: null,
+      feedback: "I couldn't find an amount. Try something like \"spent 30 on lunch yesterday\" or \"paid $50 for groceries\".",
+    };
+  }
+
+  const { amount, cleaned } = amountResult;
+  const transactionDate = extractDate(input);
+
+  // Determine type: income or expense
+  const incomeSignals = /\b(?:received|earned|got paid|deposited)\b/i;
+  const txType: TransactionType = incomeSignals.test(input) ? 'income' : 'expense';
+
+  // Infer category from keywords
+  const lower = input.toLowerCase();
+  let category = 'Other';
+  let matchedKeyword: string | null = null;
+
+  for (const entry of CATEGORY_KEYWORDS) {
+    if (lower.includes(entry.keyword)) {
+      category = entry.category;
+      matchedKeyword = entry.keyword;
+      break;
+    }
+  }
+
+  const description = extractDescription(cleaned, matchedKeyword, category);
+  const confidence = matchedKeyword ? 0.9 : 0.7;
+
+  // Format date for display
+  const dateObj = new Date(transactionDate + 'T00:00:00');
+  const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const transaction: ParsedTransaction = {
+    description,
+    amount,
+    type: txType,
+    category,
+    transactionDate,
+    confidence,
+  };
+
+  const typeLabel = txType === 'income' ? 'income' : 'expense';
+  const feedback = `I'll log "${description}" as a ${typeLabel} \u2014 $${amount.toLocaleString()} on ${dateLabel} under ${category}. Look right?`;
+
+  return { transaction, feedback };
 }

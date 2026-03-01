@@ -2,22 +2,42 @@ import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { toMonthly } from '../utils/formatCurrency';
-import type { BudgetItem, BudgetItemType, BudgetState, Frequency } from '../types';
+import type { BudgetItem, BudgetItemType, BudgetLimit, BudgetState, Frequency } from '../types';
 
 const STORAGE_KEY = 'cashflow-budget-v1';
 
 const defaultState: BudgetState = {
-  version: 1,
+  version: 2,
   items: [],
-  settings: { theme: 'dark', monthlyView: true },
+  settings: { theme: 'dark', monthlyView: true, budgetLimits: [] },
 };
+
+function migrateState(state: BudgetState): BudgetState {
+  if (state.version < 2) {
+    const existingLimits = 'budgetLimits' in state.settings
+      ? (state.settings.budgetLimits as BudgetLimit[])
+      : [];
+    return {
+      ...state,
+      version: 2,
+      settings: {
+        ...state.settings,
+        budgetLimits: existingLimits ?? [],
+      },
+    };
+  }
+  return state;
+}
 
 interface BudgetContextValue {
   items: BudgetItem[];
+  settings: BudgetState['settings'];
+  budgetLimits: BudgetLimit[];
   addItem: (item: Omit<BudgetItem, 'id' | 'amount' | 'createdAt' | 'updatedAt'>) => void;
   updateItem: (id: string, updates: Partial<Omit<BudgetItem, 'id' | 'amount' | 'createdAt'>>) => void;
   deleteItem: (id: string) => void;
   getItemsByType: (type: BudgetItemType) => BudgetItem[];
+  setBudgetLimits: (limits: BudgetLimit[]) => void;
   loadItems: (items: BudgetItem[]) => void;
   exportData: () => string;
   importData: (json: string) => boolean;
@@ -27,7 +47,9 @@ interface BudgetContextValue {
 const BudgetContext = createContext<BudgetContextValue | null>(null);
 
 export function BudgetProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useLocalStorage<BudgetState>(STORAGE_KEY, defaultState);
+  const [rawState, setRawState] = useLocalStorage<BudgetState>(STORAGE_KEY, defaultState);
+  const state = migrateState(rawState);
+  const setState = setRawState;
 
   const addItem = useCallback((item: Omit<BudgetItem, 'id' | 'amount' | 'createdAt' | 'updatedAt'>) => {
     const now = new Date().toISOString();
@@ -82,12 +104,16 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     }
   }, [setState]);
 
+  const setBudgetLimits = useCallback((limits: BudgetLimit[]) => {
+    setState((prev) => ({ ...prev, settings: { ...prev.settings, budgetLimits: limits } }));
+  }, [setState]);
+
   const clearAll = useCallback(() => {
     setState(defaultState);
   }, [setState]);
 
   return (
-    <BudgetContext.Provider value={{ items: state.items, addItem, updateItem, deleteItem, getItemsByType, loadItems, exportData, importData, clearAll }}>
+    <BudgetContext.Provider value={{ items: state.items, settings: state.settings, budgetLimits: state.settings.budgetLimits, addItem, updateItem, deleteItem, getItemsByType, setBudgetLimits, loadItems, exportData, importData, clearAll }}>
       {children}
     </BudgetContext.Provider>
   );

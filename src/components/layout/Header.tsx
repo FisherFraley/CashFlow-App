@@ -1,7 +1,8 @@
-import { useRef } from 'react';
-import { Sun, Moon, PanelLeft, MessageSquare, Download, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Sun, Moon, PanelLeft, MessageSquare, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useBudget } from '../../context/BudgetContext';
+import { CsvImportModal } from '../import/CsvImportModal';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -15,6 +16,7 @@ export function Header({ sidebarCollapsed, onToggleSidebar, chatCollapsed, onTog
   const { theme, toggleTheme } = useTheme();
   const { exportData, importData } = useBudget();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showCsvImport, setShowCsvImport] = useState(false);
 
   const handleExport = () => {
     const json = exportData();
@@ -57,6 +59,9 @@ export function Header({ sidebarCollapsed, onToggleSidebar, chatCollapsed, onTog
         <h1 className={styles.title}>Cash Flow Planner</h1>
       </div>
       <div className={styles.actions}>
+        <button className={styles.iconBtn} onClick={() => setShowCsvImport(true)} aria-label="Import CSV" title="Import bank CSV">
+          <FileSpreadsheet size={18} />
+        </button>
         <button className={styles.iconBtn} onClick={handleExport} aria-label="Export data" title="Export budget">
           <Download size={18} />
         </button>
@@ -82,6 +87,7 @@ export function Header({ sidebarCollapsed, onToggleSidebar, chatCollapsed, onTog
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+      <CsvImportModal open={showCsvImport} onClose={() => setShowCsvImport(false)} />
     </header>
   );
 }
