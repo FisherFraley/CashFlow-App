@@ -1,0 +1,63 @@
+.layout {
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "header header header"
+    "sidebar main chat";
+}
+
+.header {
+  grid-area: header;
+}
+
+.sidebar {
+  grid-area: sidebar;
+  width: 340px;
+  border-right: var(--glass-border);
+  overflow-y: auto;
+  background: var(--color-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+}
+
+.sidebarCollapsed {
+  width: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 24px;
+  height: calc(100vh - 56px);
+}
+
+.chat {
+  grid-area: chat;
+  width: 360px;
+  border-left: var(--glass-border);
+  background: var(--color-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chatCollapsed {
+  width: 0;
+  overflow: hidden;
+  border-left: none;
+}

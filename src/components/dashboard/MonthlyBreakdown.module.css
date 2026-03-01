@@ -1,0 +1,124 @@
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.emptyContainer {
+  background: var(--color-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 80px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.section {
+  background: var(--color-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: var(--glass-border);
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.sectionTotal {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.categoryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.categoryInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.categoryName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.categoryAmount {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.barTrack {
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 4px;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.itemName {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.itemAmount {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.itemFreq {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+}

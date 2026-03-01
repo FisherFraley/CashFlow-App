@@ -1,0 +1,25 @@
+.chartContainer {
+  background: var(--color-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+  min-height: 460px;
+  transition: box-shadow 0.3s ease;
+}
+
+.chartContainer:hover {
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.emptyContainer {
+  background: var(--color-surface);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 80px 24px;
+  box-shadow: var(--shadow-sm);
+}
