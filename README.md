@@ -1,73 +1,87 @@
-# React + TypeScript + Vite
+# Cash Flow Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal finance web app for visualizing how your money flows — from income through expenses, savings, and one-time purchases — using an interactive Sankey diagram.
 
-Currently, two official plugins are available:
+Built with React, TypeScript, and Vite. Inspired by tools like Monarch Money.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Sankey Diagram** — Interactive cash flow visualization powered by Plotly.js showing income sources flowing through to expenses, savings, and purchases
+- **Monthly Breakdown** — Category-by-category spending view with progress bars and per-item detail
+- **Natural Language Chat** — Add budget items conversationally (e.g., "rent 1500 monthly", "coffee 5 today") — no `$` sign required
+- **Sidebar Budget Manager** — Traditional form-based editing for income, expenses, savings, and one-time items
+- **Light & Dark Mode** — Claude-inspired warm amber/terracotta theme with glass morphism design
+- **Data Persistence** — Budget saved to localStorage with JSON import/export
+- **Responsive Layout** — Collapsible sidebar and chat panel with smooth transitions
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+- **React 19** + **TypeScript**
+- **Vite 7** — dev server and build tool
+- **Plotly.js** via `react-plotly.js` — Sankey diagram rendering
+- **CSS Modules** — scoped styling with CSS custom properties for theming
+- **Vitest** — 61 unit tests across parser, calculations, Sankey transform, and utilities
+- **Lucide React** — icon library
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+```bash
+# Install dependencies
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Start dev server
+npm run dev
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Run tests
+npm test
+
+# Build for production
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Structure
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+  components/
+    AppContent.tsx          # Main orchestrator with state management
+    chat/                   # Chat panel, input, message bubbles, preview cards
+    dashboard/              # Dashboard, SankeyChart, SummaryCards, MonthlyBreakdown, ViewNav
+    forms/                  # BudgetManager, BudgetSection, BudgetItemForm, ItemList
+    layout/                 # Layout (CSS Grid shell), Header
+    shared/                 # Button, Card, Modal, WelcomeModal, EmptyState
+  constants/
+    categories.ts           # Category lists for each budget type
+    sampleData.ts           # Demo budget data
+  context/
+    BudgetContext.tsx        # Budget state provider with localStorage
+    ThemeContext.tsx         # Light/dark theme provider
+  hooks/
+    useLocalStorage.ts      # Generic localStorage hook
+  types/
+    index.ts                # TypeScript interfaces (BudgetItem, ChatMessage, Summary, etc.)
+  utils/
+    calculations.ts         # Summary calculations (income, expenses, savings rate, net cash flow)
+    chatParser.ts           # Natural language parser for budget items
+    formatCurrency.ts       # Currency formatting and frequency-to-monthly conversion
+    sankeyTransform.ts      # Builds Plotly Sankey data from budget items
+  test/
+    setup.ts                # Vitest setup with jest-dom matchers
+```
+
+## Chat Parser
+
+The chat panel uses a regex-based natural language parser — no AI API required. It supports:
+
+- **Amounts**: `$1500`, `1500`, `400 dollars`, `20 bucks`, `costs 500`
+- **Frequencies**: `monthly`, `weekly`, `biweekly`, `yearly`, `one-time`, `today`
+- **Auto-categorization**: 80+ keyword mappings (e.g., "rent" -> Housing, "netflix" -> Subscriptions, "401k" -> Retirement)
+- **Updates**: "update rent to 1600" matches existing items
+
+## Deployment
+
+The app is deployed via [Vercel](https://vercel.com). Push to `main` triggers automatic deployment.
+
+## License
+
+MIT
